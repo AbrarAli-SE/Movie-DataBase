@@ -7,14 +7,23 @@ public class DBGUI extends JFrame {
         setTitle("Movie Database Login");
         setSize(500, 300);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLayout(new GridLayout(4, 1));
+        setLayout(new BorderLayout());
 
+        // Creating a panel to hold buttons at the top
+        JPanel menuPanel = new JPanel();
+        menuPanel.setLayout(new GridLayout(1, 4)); // Buttons in a single row
         String[] labels = { "Login", "Register (User)", "Search Movies (Guest)", "Exit" };
         for (String label : labels) {
             JButton button = new JButton(label);
             button.addActionListener(this::handleMenuClick);
-            add(button);
+            menuPanel.add(button);
         }
+
+        // Adding the panel to the top of the layout
+        add(menuPanel, BorderLayout.NORTH);
+
+        // Adding an empty space in the center for better structure
+        add(new JLabel("Welcome to the Movie Database", SwingConstants.CENTER), BorderLayout.CENTER);
     }
 
     private void handleMenuClick(ActionEvent e) {
@@ -22,7 +31,7 @@ public class DBGUI extends JFrame {
         switch (command) {
             case "Login" -> new UserManagerGUI().setVisible(true);
             case "Register (User)" -> new RegistrationGUI().setVisible(true);
-            case "Search Movies (Guest)" -> new MovieManagerGUI().setVisible(true); // Pass userId=0 for guest
+            case "Search Movies (Guest)" -> new MovieManagerGUI().setVisible(true);
             case "Exit" -> System.exit(0);
         }
     }
