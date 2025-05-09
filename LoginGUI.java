@@ -112,7 +112,7 @@ public class LoginGUI extends JFrame {
                 if (username.startsWith("admin_")) {
                     new AdminManagerGUI(userId).setVisible(true);
                 } else {
-                    new MovieManagerGUI().setVisible(true);
+                    new MovieManagerGUI(false, userId).setVisible(true); // Pass userId for non-guest mode
                 }
                 dispose();
             } else {

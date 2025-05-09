@@ -56,26 +56,18 @@ public class AdminManagerGUI extends JFrame {
         headerPanel.add(titleLabel);
         mainPanel.add(headerPanel, BorderLayout.NORTH);
 
-        JPanel buttonPanel = new JPanel();
-        buttonPanel.setLayout(new GridLayout(8, 1, 10, 10));
-        buttonPanel.setBackground(new Color(245, 247, 250));
-
-        String[] labels = {
-                "Movie Operations", "Director Operations", "Studio Operations",
-                "Actor Operations", "Genre Operations", "View Registered Users", "Back", "Logout"
-        };
+        JPanel menuPanel = new JPanel();
+        menuPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 10, 5));
+        menuPanel.setBackground(new Color(245, 247, 250));
+        String[] labels = { "Manage Actors", "Manage Directors", "Manage Genres", "Manage Studios", "Manage Users", "Manage Movies", "Back", "Exit" };
         for (String label : labels) {
             RoundedButton button = new RoundedButton(label);
-            buttonPanel.add(button);
+            menuPanel.add(button);
             button.addActionListener(this::handleMenuClick);
         }
+        mainPanel.add(menuPanel, BorderLayout.CENTER);
 
-        JPanel centerWrapper = new JPanel(new GridBagLayout());
-        centerWrapper.setBackground(new Color(245, 247, 250));
-        centerWrapper.add(buttonPanel);
-        mainPanel.add(centerWrapper, BorderLayout.CENTER);
-
-        JLabel footerLabel = new JLabel("Admin panel for managing database operations.", SwingConstants.CENTER);
+        JLabel footerLabel = new JLabel("Admin control panel for the movie database.", SwingConstants.CENTER);
         footerLabel.setFont(new Font("Segoe UI", Font.ITALIC, 12));
         footerLabel.setForeground(new Color(51, 51, 51));
         mainPanel.add(footerLabel, BorderLayout.SOUTH);
@@ -86,21 +78,18 @@ public class AdminManagerGUI extends JFrame {
     private void handleMenuClick(ActionEvent e) {
         String command = e.getActionCommand();
         switch (command) {
-            case "Movie Operations" -> new MovieManagerGUI().setVisible(true);
-            case "Director Operations" -> new DirectorManagerGUI().setVisible(true);
-            case "Studio Operations" -> new StudioManagerGUI().setVisible(true);
-            case "Actor Operations" -> new ActorManagerGUI().setVisible(true);
-            case "Genre Operations" -> new GenreManagerGUI().setVisible(true);
-            case "View Registered Users" -> new UserManagerGUI().setVisible(true);
+            case "Manage Actors" -> new ActorManagerGUI().setVisible(true);
+            case "Manage Directors" -> new DirectorManagerGUI().setVisible(true);
+            case "Manage Genres" -> new GenreManagerGUI().setVisible(true);
+            case "Manage Studios" -> new StudioManagerGUI().setVisible(true);
+            case "Manage Users" -> new UserManagerGUI().setVisible(true);
+            case "Manage Movies" -> new MovieManagerGUI(false, userId).setVisible(true);
             case "Back" -> dispose();
-            case "Logout" -> {
-                JOptionPane.showMessageDialog(this, "Logged out.");
-                dispose();
-            }
+            case "Exit" -> System.exit(0);
         }
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new AdminManagerGUI(1).setVisible(true));
+        SwingUtilities.invokeLater(() -> new AdminManagerGUI(0).setVisible(true));
     }
 }

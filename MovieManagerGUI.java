@@ -1,5 +1,4 @@
 import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.DocumentEvent;
 import java.awt.*;
@@ -39,19 +38,17 @@ public class MovieManagerGUI extends JFrame {
         }
     }
 
-    private JTable movieTable;
-    private DefaultTableModel movieModel;
+    private JPanel moviesPanel;
     private boolean isGuest;
+    private int userId;
     private JTextField searchField;
+    private JScrollPane scrollPane;
 
-    public MovieManagerGUI() {
-        this(false); // Default constructor for non-guest mode
-    }
-
-    public MovieManagerGUI(boolean isGuest) {
+    public MovieManagerGUI(boolean isGuest, int userId) {
         this.isGuest = isGuest;
+        this.userId = userId;
         setTitle(isGuest ? "Guest Movie Search" : "Movie Manager");
-        setSize(800, 500);
+        setSize(1000, 600);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLayout(new BorderLayout(10, 10));
         setLocationRelativeTo(null);
@@ -68,17 +65,13 @@ public class MovieManagerGUI extends JFrame {
         headerPanel.add(titleLabel);
         mainPanel.add(headerPanel, BorderLayout.NORTH);
 
-        movieModel = new DefaultTableModel(new String[] { "ID", "Title", "Release Date", "Duration", "Budget" }, 0);
-        movieTable = new JTable(movieModel);
-        mainPanel.add(new JScrollPane(movieTable), BorderLayout.CENTER);
-
         if (isGuest) {
             setupGuestUI(mainPanel);
         } else {
-            setupManagerUI(mainPanel);
+            setupUserUI(mainPanel);
         }
 
-        JLabel footerLabel = new JLabel(isGuest ? "Search movies as a guest." : "Manage movies and reviews in the database.", SwingConstants.CENTER);
+        JLabel footerLabel = new JLabel(isGuest ? "Search movies as a guest." : "Manage movies and reviews.", SwingConstants.CENTER);
         footerLabel.setFont(new Font("Segoe UI", Font.ITALIC, 12));
         footerLabel.setForeground(new Color(51, 51, 51));
         mainPanel.add(footerLabel, BorderLayout.SOUTH);
@@ -102,7 +95,6 @@ public class MovieManagerGUI extends JFrame {
         searchPanel.add(searchButton);
         searchPanel.add(backButton);
 
-        // AJAX-like dynamic search
         searchField.getDocument().addDocumentListener(new DocumentListener() {
             @Override
             public void insertUpdate(DocumentEvent e) { searchMovies(); }
@@ -116,46 +108,311 @@ public class MovieManagerGUI extends JFrame {
         backButton.addActionListener(e -> dispose());
 
         mainPanel.add(searchPanel, BorderLayout.NORTH);
+
+        new DefaultTableModel(new String[] { "Movie ID", "Title", "Release Date", "Duration", "Budget" }, 0);
+        JTable movieTable = new JTable();
+        scrollPane = new JScrollPane(movieTable);
+        mainPanel.add(scrollPane, BorderLayout.CENTER);
     }
 
-    private void setupManagerUI(JPanel mainPanel) {
-        JPanel menuPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 5));
-        menuPanel.setBackground(new Color(245, 247, 250));
-        String[] labels = { "Add Movie", "Edit Movie", "Delete Movie", "Search Movies", "Back", "Exit" };
-        for (String label : labels) {
-            RoundedButton button = new RoundedButton(label);
-            menuPanel.add(button);
-            button.addActionListener(this::handleMenuClick);
-        }
-        mainPanel.add(menuPanel, BorderLayout.NORTH);
+    private void setupUserUI(JPanel mainPanel) {
+        JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 5));
+        searchPanel.setBackground(new Color(245, 247, 250));
+
+        searchField = new JTextField(20);
+        searchField.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        RoundedButton searchButton = new RoundedButton("Search");
+        RoundedButton addMovieButton = new RoundedButton("Add Movie");
+        RoundedButton addReviewButton = new RoundedButton("Add Review");
+        RoundedButton backButton = new RoundedButton("Back");
+
+        searchPanel.add(new JLabel("Search Movies:"));
+        searchPanel.add(searchField);
+        searchPanel.add(searchButton);
+        searchPanel.add(addMovieButton);
+        searchPanel.add(addReviewButton);
+        searchPanel.add(backButton);
+
+        searchPanel.add(new JLabel("Search Movies:"));
+        searchPanel.add(searchField);
+        searchPanel.add(searchButton);
+        searchPanel.add(addMovieButton);
+        searchPanel.add(addReviewButton);
+        searchPanel.add(backButton);
+
+        searchField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) { searchMovies(); }
+            @Override
+            public void removeUpdate(DocumentEvent e) { searchMovies(); }
+            @Override
+            public void changedUpdate(DocumentEvent e) { searchMovies(); }
+        });
+
+        searchButton.addActionListener(e -> searchMovies());
+        addMovieButton.addActionListener(e -> addMovie());
+        addReviewButton.addActionListener(e -> addReview());
+        backButton.addActionListener(e -> dispose());
+
+        mainPanel.add(searchPanel, BorderLayout.NORTH);
+
+        moviesPanel = new JPanel();
+        moviesPanel.setLayout(new BoxLayout(moviesPanel, BoxLayout.Y_AXIS));
+        moviesPanel.setBackground(new Color(245, 247, 250));
+        scrollPane = new JScrollPane(moviesPanel);
+        mainPanel.add(scrollPane, BorderLayout.CENTER);
     }
 
-    private void handleMenuClick(ActionEvent e) {
-        String command = e.getActionCommand();
-        switch (command) {
-            case "Add Movie" -> addMovie();
-            case "Edit Movie" -> editMovie();
-            case "Delete Movie" -> deleteMovie();
-            case "Search Movies" -> searchMoviesPrompt();
-            case "Back" -> dispose();
-            case "Exit" -> System.exit(0);
+    private void refreshMovies() {
+        if (isGuest) {
+            JTable table = (JTable) scrollPane.getViewport().getView();
+            DefaultTableModel movieModel = (DefaultTableModel) table.getModel();
+            movieModel.setRowCount(0);
+            String sql = "SELECT movieId, title, releaseDate, duration, budget FROM Movie";
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(sql);
+                 ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    movieModel.addRow(new Object[] {
+                            rs.getInt("movieId"),
+                            rs.getString("title"),
+                            rs.getDate("releaseDate"),
+                            rs.getInt("duration"),
+                            rs.getDouble("budget")
+                    });
+                }
+            } catch (SQLException e) {
+                JOptionPane.showMessageDialog(this, "Error fetching movies: " + e.getMessage(), "Error",
+                        JOptionPane.ERROR_MESSAGE);
+                e.printStackTrace();
+            }
+        } else {
+            moviesPanel.removeAll();
+            String sql = "SELECT movieId, title, releaseDate, duration, budget FROM Movie";
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(sql);
+                 ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    int movieId = rs.getInt("movieId");
+                    JPanel moviePanel = new JPanel(new GridBagLayout());
+                    moviePanel.setBackground(Color.WHITE);
+                    moviePanel.setBorder(BorderFactory.createCompoundBorder(
+                            BorderFactory.createLineBorder(new Color(200, 200, 200), 1),
+                            BorderFactory.createEmptyBorder(10, 10, 10, 10)));
+                    moviePanel.setMaximumSize(new Dimension(900, Integer.MAX_VALUE));
+
+                    GridBagConstraints gbc = new GridBagConstraints();
+                    gbc.insets = new Insets(0, 5, 0, 15);
+                    gbc.anchor = GridBagConstraints.WEST;
+                    gbc.gridx = 0;
+                    gbc.gridy = 0;
+                    moviePanel.add(new JLabel(String.valueOf(movieId)), gbc);
+                    gbc.gridx++;
+                    moviePanel.add(new JLabel(rs.getString("title") != null ? rs.getString("title") : ""), gbc);
+                    gbc.gridx++;
+                    moviePanel.add(new JLabel(rs.getDate("releaseDate") != null ? rs.getDate("releaseDate").toString() : ""), gbc);
+                    gbc.gridx++;
+                    moviePanel.add(new JLabel(rs.getInt("duration") + " min"), gbc);
+                    gbc.gridx++;
+                    moviePanel.add(new JLabel("$" + rs.getDouble("budget")), gbc);
+                    gbc.gridx++;
+                    RoundedButton viewReviewsButton = new RoundedButton("View Reviews");
+                    viewReviewsButton.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+                    moviePanel.add(viewReviewsButton, gbc);
+
+                    viewReviewsButton.addActionListener(e -> showReviews(movieId));
+
+                    moviesPanel.add(moviePanel);
+                    moviesPanel.add(Box.createVerticalStrut(10));
+                }
+            } catch (SQLException e) {
+                JOptionPane.showMessageDialog(this, "Error fetching movies: " + e.getMessage(), "Error",
+                        JOptionPane.ERROR_MESSAGE);
+                e.printStackTrace();
+            }
+            moviesPanel.revalidate();
+            moviesPanel.repaint();
         }
+    }
+
+    private void searchMovies() {
+        String searchTerm = searchField.getText().trim();
+        if (isGuest) {
+            JTable table = (JTable) scrollPane.getViewport().getView();
+            DefaultTableModel movieModel = (DefaultTableModel) table.getModel();
+            movieModel.setRowCount(0);
+            String sql = "SELECT movieId, title, releaseDate, duration, budget FROM Movie WHERE LOWER(title) LIKE ?";
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setString(1, "%" + searchTerm.toLowerCase() + "%");
+                ResultSet rs = stmt.executeQuery();
+                while (rs.next()) {
+                    movieModel.addRow(new Object[] {
+                            rs.getInt("movieId"),
+                            rs.getString("title"),
+                            rs.getDate("releaseDate"),
+                            rs.getInt("duration"),
+                            rs.getDouble("budget")
+                    });
+                }
+            } catch (SQLException e) {
+                JOptionPane.showMessageDialog(this, "Error searching movies: " + e.getMessage(), "Error",
+                        JOptionPane.ERROR_MESSAGE);
+                e.printStackTrace();
+            }
+        } else {
+            moviesPanel.removeAll();
+            String sql = "SELECT movieId, title, releaseDate, duration, budget FROM Movie WHERE LOWER(title) LIKE ?";
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement stmt = conn.prepareStatement(sql)) {
+                stmt.setString(1, "%" + searchTerm.toLowerCase() + "%");
+                ResultSet rs = stmt.executeQuery();
+                while (rs.next()) {
+                    int movieId = rs.getInt("movieId");
+                    JPanel moviePanel = new JPanel(new GridBagLayout());
+                    moviePanel.setBackground(Color.WHITE);
+                    moviePanel.setBorder(BorderFactory.createCompoundBorder(
+                            BorderFactory.createLineBorder(new Color(200, 200, 200), 1),
+                            BorderFactory.createEmptyBorder(10, 10, 10, 10)));
+                    moviePanel.setMaximumSize(new Dimension(900, Integer.MAX_VALUE));
+
+                    GridBagConstraints gbc = new GridBagConstraints();
+                    gbc.insets = new Insets(0, 5, 0, 15);
+                    gbc.anchor = GridBagConstraints.WEST;
+                    gbc.gridx = 0;
+                    gbc.gridy = 0;
+                    moviePanel.add(new JLabel(String.valueOf(movieId)), gbc);
+                    gbc.gridx++;
+                    moviePanel.add(new JLabel(rs.getString("title") != null ? rs.getString("title") : ""), gbc);
+                    gbc.gridx++;
+                    moviePanel.add(new JLabel(rs.getDate("releaseDate") != null ? rs.getDate("releaseDate").toString() : ""), gbc);
+                    gbc.gridx++;
+                    moviePanel.add(new JLabel(rs.getInt("duration") + " min"), gbc);
+                    gbc.gridx++;
+                    moviePanel.add(new JLabel("$" + rs.getDouble("budget")), gbc);
+                    gbc.gridx++;
+                    RoundedButton viewReviewsButton = new RoundedButton("View Reviews");
+                    viewReviewsButton.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+                    moviePanel.add(viewReviewsButton, gbc);
+
+                    viewReviewsButton.addActionListener(e -> showReviews(movieId));
+
+                    moviesPanel.add(moviePanel);
+                    moviesPanel.add(Box.createVerticalStrut(10));
+                }
+            } catch (SQLException e) {
+                JOptionPane.showMessageDialog(this, "Error searching movies: " + e.getMessage(), "Error",
+                        JOptionPane.ERROR_MESSAGE);
+                e.printStackTrace();
+            }
+            moviesPanel.revalidate();
+            moviesPanel.repaint();
+        }
+    }
+
+    private void showReviews(int movieId) {
+        JDialog reviewDialog = new JDialog(this, "Reviews for Movie ID: " + movieId, true);
+        reviewDialog.setSize(600, 400);
+        reviewDialog.setLocationRelativeTo(this);
+        reviewDialog.setLayout(new BorderLayout(10, 10));
+
+        JPanel reviewsPanel = new JPanel();
+        reviewsPanel.setLayout(new BoxLayout(reviewsPanel, BoxLayout.Y_AXIS));
+        reviewsPanel.setBackground(new Color(245, 247, 250));
+        reviewsPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        String sql = "SELECT r.userId, r.rating, r.comment, r.reviewDate, u.email " +
+                     "FROM Review r LEFT JOIN User u ON r.userId = u.userId " +
+                     "WHERE r.movieId = ?";
+        boolean hasReviews = false;
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, movieId);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                hasReviews = true;
+                JPanel reviewPanel = new JPanel(new GridBagLayout());
+                reviewPanel.setBackground(new Color(245, 245, 245));
+                reviewPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+                GridBagConstraints gbc = new GridBagConstraints();
+                gbc.insets = new Insets(3, 5, 3, 5);
+                gbc.anchor = GridBagConstraints.WEST;
+                gbc.gridx = 0;
+                gbc.gridy = 0;
+                reviewPanel.add(new JLabel("<html><b>Email:</b> " + (rs.getString("email") != null ? rs.getString("email") : "Unknown") + "</html>"), gbc);
+                gbc.gridy++;
+                reviewPanel.add(new JLabel("<html><b>Rating:</b> " + rs.getDouble("rating") + "</html>"), gbc);
+                gbc.gridy++;
+                reviewPanel.add(new JLabel("<html><b>Comment:</b> " + (rs.getString("comment") != null ? rs.getString("comment") : "No comment") + "</html>"), gbc);
+                gbc.gridy++;
+                reviewPanel.add(new JLabel("<html><b>Review Date:</b> " + (rs.getDate("reviewDate") != null ? rs.getDate("reviewDate").toString() : "N/A") + "</html>"), gbc);
+                reviewsPanel.add(reviewPanel);
+                reviewsPanel.add(Box.createVerticalStrut(5));
+            }
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(this, "Error fetching reviews: " + e.getMessage(), "Error",
+                    JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+            return;
+        }
+
+        if (!hasReviews) {
+            reviewsPanel.add(new JLabel("No reviews available for this movie."));
+        }
+
+        JScrollPane reviewsScrollPane = new JScrollPane(reviewsPanel);
+        reviewDialog.add(reviewsScrollPane, BorderLayout.CENTER);
+
+        RoundedButton closeButton = new RoundedButton("Close");
+        closeButton.addActionListener(e -> reviewDialog.dispose());
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        buttonPanel.setBackground(new Color(245, 247, 250));
+        buttonPanel.add(closeButton);
+        reviewDialog.add(buttonPanel, BorderLayout.SOUTH);
+
+        reviewDialog.setVisible(true);
     }
 
     private void addMovie() {
         String title = JOptionPane.showInputDialog(this, "Enter Movie Title:");
-        if (title == null || title.trim().isEmpty())
+        if (title == null || title.trim().isEmpty()) {
             return;
+        }
 
         String releaseDateStr = JOptionPane.showInputDialog(this, "Enter Release Date (YYYY-MM-DD):");
-        Date releaseDate = releaseDateStr.isEmpty() ? null : Date.valueOf(releaseDateStr);
+        Date releaseDate = null;
+        if (releaseDateStr != null && !releaseDateStr.trim().isEmpty()) {
+            try {
+                releaseDate = Date.valueOf(releaseDateStr);
+            } catch (IllegalArgumentException e) {
+                JOptionPane.showMessageDialog(this, "Invalid date format. Use YYYY-MM-DD.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+        }
 
-        int duration = InputValidatorGUI.getValidInt();
-        double budget = InputValidatorGUI.getValidDouble();
+        String durationStr = JOptionPane.showInputDialog(this, "Enter Duration (minutes):");
+        int duration;
+        try {
+            duration = Integer.parseInt(durationStr);
+            if (duration <= 0) {
+                JOptionPane.showMessageDialog(this, "Duration must be positive.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this, "Invalid duration format.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
 
-        if (duration <= 0 || budget < 0) {
-            JOptionPane.showMessageDialog(this, "Duration must be positive and budget non-negative.", "Error",
-                    JOptionPane.ERROR_MESSAGE);
+        String budgetStr = JOptionPane.showInputDialog(this, "Enter Budget (in dollars):");
+        double budget;
+        try {
+            budget = Double.parseDouble(budgetStr);
+            if (budget < 0) {
+                JOptionPane.showMessageDialog(this, "Budget must be non-negative.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this, "Invalid budget format.", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
@@ -163,7 +420,7 @@ public class MovieManagerGUI extends JFrame {
             String sql = "INSERT INTO Movie (title, releaseDate, duration, budget) VALUES (?, ?, ?, ?)";
             try (PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
                 stmt.setString(1, title);
-                stmt.setDate(2, releaseDate != null ? releaseDate : null);
+                stmt.setDate(2, releaseDate);
                 stmt.setInt(3, duration);
                 stmt.setDouble(4, budget);
                 stmt.executeUpdate();
@@ -175,142 +432,39 @@ public class MovieManagerGUI extends JFrame {
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(this, "Error adding movie: " + e.getMessage(), "Error",
                     JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
         }
 
         refreshMovies();
     }
 
-    private void editMovie() {
-        int movieId = InputValidatorGUI.getValidInt();
-        String title = JOptionPane.showInputDialog(this, "Enter New Movie Title:");
-        String releaseDateStr = JOptionPane.showInputDialog(this, "Enter New Release Date (YYYY-MM-DD):");
-        Date releaseDate = releaseDateStr.isEmpty() ? null : Date.valueOf(releaseDateStr);
-        int duration = InputValidatorGUI.getValidInt();
-        double budget = InputValidatorGUI.getValidDouble();
-
-        if (title == null || title.trim().isEmpty() || duration <= 0 || budget < 0) {
-            JOptionPane.showMessageDialog(this, "Invalid input.", "Error", JOptionPane.ERROR_MESSAGE);
+    private void addReview() {
+        String movieTitle = JOptionPane.showInputDialog(this, "Enter Movie Title:");
+        if (movieTitle == null || movieTitle.trim().isEmpty()) {
             return;
         }
 
-        try (Connection conn = DatabaseConnection.getConnection()) {
-            String sql = "UPDATE Movie SET title = ?, releaseDate = ?, duration = ?, budget = ? WHERE movieId = ?";
-            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                stmt.setString(1, title);
-                stmt.setDate(2, releaseDate != null ? releaseDate : null);
-                stmt.setInt(3, duration);
-                stmt.setDouble(4, budget);
-                stmt.setInt(5, movieId);
-                stmt.executeUpdate();
-                JOptionPane.showMessageDialog(this, "Movie updated successfully!");
-            }
-        } catch (SQLException e) {
-            JOptionPane.showMessageDialog(this, "Error editing movie: " + e.getMessage(), "Error",
-                    JOptionPane.ERROR_MESSAGE);
-        }
-
-        refreshMovies();
-    }
-
-    private void deleteMovie() {
-        int movieId = InputValidatorGUI.getValidInt();
-
-        try (Connection conn = DatabaseConnection.getConnection()) {
-            String sql = "DELETE FROM Movie WHERE movieId = ?";
-            try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-                stmt.setInt(1, movieId);
-                stmt.executeUpdate();
-                JOptionPane.showMessageDialog(this, "Movie deleted successfully!");
-            }
-        } catch (SQLException e) {
-            JOptionPane.showMessageDialog(this, "Error deleting movie: " + e.getMessage(), "Error",
-                    JOptionPane.ERROR_MESSAGE);
-        }
-
-        refreshMovies();
-    }
-
-    private void refreshMovies() {
-        movieModel.setRowCount(0);
-        try (Connection conn = DatabaseConnection.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT movieId, title, releaseDate, duration, budget FROM Movie")) {
-            while (rs.next()) {
-                movieModel.addRow(new Object[] {
-                        rs.getInt("movieId"),
-                        rs.getString("title"),
-                        rs.getDate("releaseDate"),
-                        rs.getInt("duration"),
-                        rs.getDouble("budget")
-                });
-            }
-        } catch (SQLException e) {
-            JOptionPane.showMessageDialog(this, "Error fetching movies: " + e.getMessage(), "Error",
-                    JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    private void searchMovies() {
-        if (!isGuest) return; // Guest mode only for this method
-        String searchTerm = searchField.getText().trim();
-        movieModel.setRowCount(0);
-        String sql = "SELECT movieId, title, releaseDate, duration, budget FROM Movie WHERE LOWER(title) LIKE ?";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, "%" + searchTerm.toLowerCase() + "%");
-            ResultSet rs = stmt.executeQuery();
-            while (rs.next()) {
-                movieModel.addRow(new Object[] {
-                        rs.getInt("movieId"),
-                        rs.getString("title"),
-                        rs.getDate("releaseDate"),
-                        rs.getInt("duration"),
-                        rs.getDouble("budget")
-                });
-            }
-        } catch (SQLException e) {
-            JOptionPane.showMessageDialog(this, "Error searching movies: " + e.getMessage(), "Error",
-                    JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    private void searchMoviesPrompt() {
-        if (isGuest) return; // Non-guest mode only for this method
-        String searchTerm = JOptionPane.showInputDialog(this, "Enter Search Term:");
-        if (searchTerm == null || searchTerm.trim().isEmpty())
-            return;
-
-        movieModel.setRowCount(0);
-        String sql = "SELECT movieId, title, releaseDate, duration, budget FROM Movie WHERE LOWER(title) LIKE ?";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, "%" + searchTerm.toLowerCase() + "%");
-            ResultSet rs = stmt.executeQuery();
-            while (rs.next()) {
-                movieModel.addRow(new Object[] {
-                        rs.getInt("movieId"),
-                        rs.getString("title"),
-                        rs.getDate("releaseDate"),
-                        rs.getInt("duration"),
-                        rs.getDouble("budget")
-                });
-            }
-        } catch (SQLException e) {
-            JOptionPane.showMessageDialog(this, "Error searching movies: " + e.getMessage(), "Error",
-                    JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    private void addReview(String movieTitle, int userId) {
         int movieId = getMovieIdByTitle(movieTitle);
         if (movieId == -1) {
             JOptionPane.showMessageDialog(this, "Error: Movie not found.", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        double rating = InputValidatorGUI.getValidDouble();
+        String ratingStr = JOptionPane.showInputDialog(this, "Enter Rating (0-10):");
+        double rating;
+        try {
+            rating = Double.parseDouble(ratingStr);
+            if (rating < 0 || rating > 10) {
+                JOptionPane.showMessageDialog(this, "Rating must be between 0 and 10.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this, "Invalid rating format.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
         String comment = JOptionPane.showInputDialog(this, "Enter Comment (optional, press Enter to skip):");
-        if (comment.isEmpty()) {
+        if (comment != null && comment.trim().isEmpty()) {
             comment = null;
         }
 
@@ -328,7 +482,10 @@ public class MovieManagerGUI extends JFrame {
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(this, "Error adding review: " + e.getMessage(), "Error",
                     JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
         }
+
+        refreshMovies();
     }
 
     private int getMovieIdByTitle(String movieTitle) {
@@ -342,36 +499,12 @@ public class MovieManagerGUI extends JFrame {
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(this, "Error retrieving movie ID: " + e.getMessage(), "Error",
                     JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
         }
         return -1;
     }
 
-    private void displayReviews(int movieId) {
-        String sql = "SELECT userId, rating, comment, reviewDate FROM Review WHERE movieId = ?";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, movieId);
-            ResultSet rs = stmt.executeQuery();
-            StringBuilder reviews = new StringBuilder("Reviews:\n");
-            boolean hasReviews = false;
-            while (rs.next()) {
-                hasReviews = true;
-                reviews.append(String.format("- User %d: Rating %.1f/10, Comment: %s, Date: %s\n",
-                        rs.getInt("userId"), rs.getDouble("rating"),
-                        rs.getString("comment") != null ? rs.getString("comment") : "No comment",
-                        rs.getDate("reviewDate")));
-            }
-            if (!hasReviews) {
-                reviews.append("No reviews available.");
-            }
-            JOptionPane.showMessageDialog(this, reviews.toString(), "Movie Reviews", JOptionPane.INFORMATION_MESSAGE);
-        } catch (SQLException e) {
-            JOptionPane.showMessageDialog(this, "Error fetching reviews: " + e.getMessage(), "Error",
-                    JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new MovieManagerGUI().setVisible(true));
+        SwingUtilities.invokeLater(() -> new MovieManagerGUI(false, 1).setVisible(true));
     }
 }

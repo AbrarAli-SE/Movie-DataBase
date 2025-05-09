@@ -82,7 +82,8 @@ public class DBGUI extends JFrame {
         switch (command) {
             case "Login" -> new LoginGUI().setVisible(true);
             case "Register (User)" -> new RegistrationGUI().setVisible(true);
-            case "Search Movies (Guest)" -> new MovieManagerGUI(true).setVisible(true);
+            // case "Search Movies (Guest)" -> new MovieManagerGUI().setVisible(true);
+             case "Guest" -> new MovieManagerGUI(true, 0).setVisible(true);
             case "Back" -> {
                 JOptionPane.showMessageDialog(this, "Closing application.");
                 dispose();
