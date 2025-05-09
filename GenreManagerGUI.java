@@ -61,7 +61,7 @@ public class GenreManagerGUI extends JFrame {
         JPanel menuPanel = new JPanel();
         menuPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 10, 5));
         menuPanel.setBackground(new Color(245, 247, 250));
-        String[] labels = { "Add Genre", "Edit Genre", "Delete Genre", "View Genres", "Back", "Exit" };
+        String[] labels = { "Add Genre", "Edit Genre", "Delete Genre", "Back", "Exit" };
         for (String label : labels) {
             RoundedButton button = new RoundedButton(label);
             menuPanel.add(button);
@@ -89,7 +89,6 @@ public class GenreManagerGUI extends JFrame {
             case "Add Genre" -> addGenre();
             case "Edit Genre" -> editGenre();
             case "Delete Genre" -> deleteGenre();
-            case "View Genres" -> refreshGenres();
             case "Back" -> dispose();
             case "Exit" -> System.exit(0);
         }

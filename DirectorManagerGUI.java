@@ -61,7 +61,7 @@ public class DirectorManagerGUI extends JFrame {
         JPanel menuPanel = new JPanel();
         menuPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 10, 5));
         menuPanel.setBackground(new Color(245, 247, 250));
-        String[] labels = { "Add Director", "Edit Director", "Delete Director", "View Directors", "Back", "Exit" };
+        String[] labels = { "Add Director", "Edit Director", "Delete Director", "Back", "Exit" };
         for (String label : labels) {
             RoundedButton button = new RoundedButton(label);
             menuPanel.add(button);
@@ -89,7 +89,6 @@ public class DirectorManagerGUI extends JFrame {
             case "Add Director" -> addDirector();
             case "Edit Director" -> editDirector();
             case "Delete Director" -> deleteDirector();
-            case "View Directors" -> refreshDirectors();
             case "Back" -> dispose();
             case "Exit" -> System.exit(0);
         }

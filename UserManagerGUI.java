@@ -62,7 +62,7 @@ public class UserManagerGUI extends JFrame {
         JPanel menuPanel = new JPanel();
         menuPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 10, 5));
         menuPanel.setBackground(new Color(245, 247, 250));
-        String[] labels = { "Login", "Register", "View Users", "Back", "Exit" };
+        String[] labels = { "Register", "Back", "Exit" };
         for (String label : labels) {
             RoundedButton button = new RoundedButton(label);
             menuPanel.add(button);
@@ -87,42 +87,9 @@ public class UserManagerGUI extends JFrame {
     private void handleMenuClick(ActionEvent e) {
         String command = e.getActionCommand();
         switch (command) {
-            case "Login" -> login();
             case "Register" -> registerUser();
-            case "View Users" -> refreshUsers();
             case "Back" -> dispose();
             case "Exit" -> System.exit(0);
-        }
-    }
-
-    private void login() {
-        String username = JOptionPane.showInputDialog(this, "Enter Username:");
-        String password = JOptionPane.showInputDialog(this, "Enter Password:");
-        if (username == null || password == null || username.trim().isEmpty() || password.trim().isEmpty())
-            return;
-
-        String sql = "SELECT userId, username FROM User WHERE username = ? AND password = ?";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, username);
-            stmt.setString(2, password);
-            ResultSet rs = stmt.executeQuery();
-            if (rs.next()) {
-                int userId = rs.getInt("userId");
-                String uname = rs.getString("username");
-                JOptionPane.showMessageDialog(this, "Login successful!");
-                if (uname.startsWith("admin_")) {
-                    new AdminManagerGUI(userId).setVisible(true);
-                } else {
-                    new MovieManagerGUI().setVisible(true);
-                }
-            } else {
-                JOptionPane.showMessageDialog(this, "Invalid username or password!", "Error",
-                        JOptionPane.ERROR_MESSAGE);
-            }
-        } catch (SQLException e) {
-            JOptionPane.showMessageDialog(this, "Error during login: " + e.getMessage(), "Error",
-                    JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -143,6 +110,7 @@ public class UserManagerGUI extends JFrame {
             stmt.setDate(4, Date.valueOf(LocalDate.now()));
             stmt.executeUpdate();
             JOptionPane.showMessageDialog(this, "User registered successfully!");
+            refreshUsers();
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(this, "Error registering user: " + e.getMessage(), "Error",
                     JOptionPane.ERROR_MESSAGE);

@@ -80,9 +80,9 @@ public class DBGUI extends JFrame {
     private void handleMenuClick(ActionEvent e) {
         String command = e.getActionCommand();
         switch (command) {
-            case "Login" -> new UserManagerGUI().setVisible(true);
+            case "Login" -> new LoginGUI().setVisible(true);
             case "Register (User)" -> new RegistrationGUI().setVisible(true);
-            case "Search Movies (Guest)" -> new MovieManagerGUI().setVisible(true);
+            case "Search Movies (Guest)" -> new MovieManagerGUI(true).setVisible(true);
             case "Back" -> {
                 JOptionPane.showMessageDialog(this, "Closing application.");
                 dispose();

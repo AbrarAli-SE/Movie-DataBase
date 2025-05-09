@@ -1,5 +1,7 @@
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.event.DocumentListener;
+import javax.swing.event.DocumentEvent;
 import java.awt.*;
 import java.awt.event.*;
 import java.sql.*;
@@ -39,9 +41,16 @@ public class MovieManagerGUI extends JFrame {
 
     private JTable movieTable;
     private DefaultTableModel movieModel;
+    private boolean isGuest;
+    private JTextField searchField;
 
     public MovieManagerGUI() {
-        setTitle("Movie Manager");
+        this(false); // Default constructor for non-guest mode
+    }
+
+    public MovieManagerGUI(boolean isGuest) {
+        this.isGuest = isGuest;
+        setTitle(isGuest ? "Guest Movie Search" : "Movie Manager");
         setSize(800, 500);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLayout(new BorderLayout(10, 10));
@@ -53,28 +62,23 @@ public class MovieManagerGUI extends JFrame {
 
         JPanel headerPanel = new JPanel();
         headerPanel.setBackground(new Color(44, 62, 80));
-        JLabel titleLabel = new JLabel("Movie Manager", SwingConstants.CENTER);
+        JLabel titleLabel = new JLabel(isGuest ? "Guest Movie Search" : "Movie Manager", SwingConstants.CENTER);
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 24));
         titleLabel.setForeground(Color.WHITE);
         headerPanel.add(titleLabel);
         mainPanel.add(headerPanel, BorderLayout.NORTH);
 
-        JPanel menuPanel = new JPanel();
-        menuPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 10, 5));
-        menuPanel.setBackground(new Color(245, 247, 250));
-        String[] labels = { "Add Movie", "Edit Movie", "Delete Movie", "View All Movies", "Search Movies", "Back", "Exit" };
-        for (String label : labels) {
-            RoundedButton button = new RoundedButton(label);
-            menuPanel.add(button);
-            button.addActionListener(this::handleMenuClick);
-        }
-        mainPanel.add(menuPanel, BorderLayout.NORTH);
-
         movieModel = new DefaultTableModel(new String[] { "ID", "Title", "Release Date", "Duration", "Budget" }, 0);
         movieTable = new JTable(movieModel);
         mainPanel.add(new JScrollPane(movieTable), BorderLayout.CENTER);
 
-        JLabel footerLabel = new JLabel("Manage movies and reviews in the database.", SwingConstants.CENTER);
+        if (isGuest) {
+            setupGuestUI(mainPanel);
+        } else {
+            setupManagerUI(mainPanel);
+        }
+
+        JLabel footerLabel = new JLabel(isGuest ? "Search movies as a guest." : "Manage movies and reviews in the database.", SwingConstants.CENTER);
         footerLabel.setFont(new Font("Segoe UI", Font.ITALIC, 12));
         footerLabel.setForeground(new Color(51, 51, 51));
         mainPanel.add(footerLabel, BorderLayout.SOUTH);
@@ -84,14 +88,55 @@ public class MovieManagerGUI extends JFrame {
         refreshMovies();
     }
 
+    private void setupGuestUI(JPanel mainPanel) {
+        JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 5));
+        searchPanel.setBackground(new Color(245, 247, 250));
+
+        searchField = new JTextField(20);
+        searchField.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        RoundedButton searchButton = new RoundedButton("Search");
+        RoundedButton backButton = new RoundedButton("Back");
+
+        searchPanel.add(new JLabel("Search Movies:"));
+        searchPanel.add(searchField);
+        searchPanel.add(searchButton);
+        searchPanel.add(backButton);
+
+        // AJAX-like dynamic search
+        searchField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) { searchMovies(); }
+            @Override
+            public void removeUpdate(DocumentEvent e) { searchMovies(); }
+            @Override
+            public void changedUpdate(DocumentEvent e) { searchMovies(); }
+        });
+
+        searchButton.addActionListener(e -> searchMovies());
+        backButton.addActionListener(e -> dispose());
+
+        mainPanel.add(searchPanel, BorderLayout.NORTH);
+    }
+
+    private void setupManagerUI(JPanel mainPanel) {
+        JPanel menuPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 5));
+        menuPanel.setBackground(new Color(245, 247, 250));
+        String[] labels = { "Add Movie", "Edit Movie", "Delete Movie", "Search Movies", "Back", "Exit" };
+        for (String label : labels) {
+            RoundedButton button = new RoundedButton(label);
+            menuPanel.add(button);
+            button.addActionListener(this::handleMenuClick);
+        }
+        mainPanel.add(menuPanel, BorderLayout.NORTH);
+    }
+
     private void handleMenuClick(ActionEvent e) {
         String command = e.getActionCommand();
         switch (command) {
             case "Add Movie" -> addMovie();
             case "Edit Movie" -> editMovie();
             case "Delete Movie" -> deleteMovie();
-            case "View All Movies" -> refreshMovies();
-            case "Search Movies" -> searchMovies();
+            case "Search Movies" -> searchMoviesPrompt();
             case "Back" -> dispose();
             case "Exit" -> System.exit(0);
         }
@@ -206,6 +251,31 @@ public class MovieManagerGUI extends JFrame {
     }
 
     private void searchMovies() {
+        if (!isGuest) return; // Guest mode only for this method
+        String searchTerm = searchField.getText().trim();
+        movieModel.setRowCount(0);
+        String sql = "SELECT movieId, title, releaseDate, duration, budget FROM Movie WHERE LOWER(title) LIKE ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, "%" + searchTerm.toLowerCase() + "%");
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                movieModel.addRow(new Object[] {
+                        rs.getInt("movieId"),
+                        rs.getString("title"),
+                        rs.getDate("releaseDate"),
+                        rs.getInt("duration"),
+                        rs.getDouble("budget")
+                });
+            }
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(this, "Error searching movies: " + e.getMessage(), "Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void searchMoviesPrompt() {
+        if (isGuest) return; // Non-guest mode only for this method
         String searchTerm = JOptionPane.showInputDialog(this, "Enter Search Term:");
         if (searchTerm == null || searchTerm.trim().isEmpty())
             return;

@@ -61,7 +61,7 @@ public class StudioManagerGUI extends JFrame {
         JPanel menuPanel = new JPanel();
         menuPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 10, 5));
         menuPanel.setBackground(new Color(245, 247, 250));
-        String[] labels = { "Add Studio", "Edit Studio", "Delete Studio", "View Studios", "Back", "Exit" };
+        String[] labels = { "Add Studio", "Edit Studio", "Delete Studio", "Back", "Exit" };
         for (String label : labels) {
             RoundedButton button = new RoundedButton(label);
             menuPanel.add(button);
@@ -89,7 +89,6 @@ public class StudioManagerGUI extends JFrame {
             case "Add Studio" -> addStudio();
             case "Edit Studio" -> editStudio();
             case "Delete Studio" -> deleteStudio();
-            case "View Studios" -> refreshStudios();
             case "Back" -> dispose();
             case "Exit" -> System.exit(0);
         }

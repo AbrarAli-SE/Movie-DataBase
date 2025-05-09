@@ -61,7 +61,7 @@ public class ActorManagerGUI extends JFrame {
         JPanel menuPanel = new JPanel();
         menuPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 10, 5));
         menuPanel.setBackground(new Color(245, 247, 250));
-        String[] labels = { "Add Actor", "Edit Actor", "Delete Actor", "View Actors", "Back", "Exit" };
+        String[] labels = { "Add Actor", "Edit Actor", "Delete Actor", "Back", "Exit" };
         for (String label : labels) {
             RoundedButton button = new RoundedButton(label);
             menuPanel.add(button);
@@ -89,7 +89,6 @@ public class ActorManagerGUI extends JFrame {
             case "Add Actor" -> addActor();
             case "Edit Actor" -> editActor();
             case "Delete Actor" -> deleteActor();
-            case "View Actors" -> refreshActors();
             case "Back" -> dispose();
             case "Exit" -> System.exit(0);
         }
