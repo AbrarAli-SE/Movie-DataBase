@@ -1,35 +1,85 @@
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.ActionEvent;
+import java.awt.event.*;
 import java.sql.*;
 import java.time.LocalDate;
 
 public class MovieManagerGUI extends JFrame {
+    static class RoundedButton extends JButton {
+        public RoundedButton(String text) {
+            super(text);
+            setContentAreaFilled(false);
+            setFocusPainted(false);
+            setFont(new Font("Segoe UI", Font.PLAIN, 14));
+            setForeground(Color.WHITE);
+            setBackground(new Color(0, 123, 255));
+            addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseEntered(MouseEvent e) {
+                    setBackground(new Color(0, 86, 179));
+                }
+                @Override
+                public void mouseExited(MouseEvent e) {
+                    setBackground(new Color(0, 123, 255));
+                }
+            });
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(getBackground());
+            g2.fillRoundRect(0, 0, getWidth(), getHeight(), 20, 20);
+            super.paintComponent(g2);
+            g2.dispose();
+        }
+    }
+
     private JTable movieTable;
     private DefaultTableModel movieModel;
 
     public MovieManagerGUI() {
         setTitle("Movie Manager");
         setSize(800, 500);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLayout(new BorderLayout());
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setLayout(new BorderLayout(10, 10));
+        setLocationRelativeTo(null);
 
-        // Top menu buttons
+        JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
+        mainPanel.setBackground(new Color(245, 247, 250));
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        JPanel headerPanel = new JPanel();
+        headerPanel.setBackground(new Color(44, 62, 80));
+        JLabel titleLabel = new JLabel("Movie Manager", SwingConstants.CENTER);
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        titleLabel.setForeground(Color.WHITE);
+        headerPanel.add(titleLabel);
+        mainPanel.add(headerPanel, BorderLayout.NORTH);
+
         JPanel menuPanel = new JPanel();
-        menuPanel.setLayout(new GridLayout(1, 6));
-        String[] labels = { "Add Movie", "Edit Movie", "Delete Movie", "View All Movies", "Search Movies", "Exit" };
+        menuPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 10, 5));
+        menuPanel.setBackground(new Color(245, 247, 250));
+        String[] labels = { "Add Movie", "Edit Movie", "Delete Movie", "View All Movies", "Search Movies", "Back", "Exit" };
         for (String label : labels) {
-            JButton button = new JButton(label);
-            button.addActionListener(this::handleMenuClick);
+            RoundedButton button = new RoundedButton(label);
             menuPanel.add(button);
+            button.addActionListener(this::handleMenuClick);
         }
-        add(menuPanel, BorderLayout.NORTH);
+        mainPanel.add(menuPanel, BorderLayout.NORTH);
 
-        // Table setup
         movieModel = new DefaultTableModel(new String[] { "ID", "Title", "Release Date", "Duration", "Budget" }, 0);
         movieTable = new JTable(movieModel);
-        add(new JScrollPane(movieTable), BorderLayout.CENTER);
+        mainPanel.add(new JScrollPane(movieTable), BorderLayout.CENTER);
+
+        JLabel footerLabel = new JLabel("Manage movies and reviews in the database.", SwingConstants.CENTER);
+        footerLabel.setFont(new Font("Segoe UI", Font.ITALIC, 12));
+        footerLabel.setForeground(new Color(51, 51, 51));
+        mainPanel.add(footerLabel, BorderLayout.SOUTH);
+
+        add(mainPanel, BorderLayout.CENTER);
 
         refreshMovies();
     }
@@ -42,6 +92,7 @@ public class MovieManagerGUI extends JFrame {
             case "Delete Movie" -> deleteMovie();
             case "View All Movies" -> refreshMovies();
             case "Search Movies" -> searchMovies();
+            case "Back" -> dispose();
             case "Exit" -> System.exit(0);
         }
     }
@@ -135,10 +186,10 @@ public class MovieManagerGUI extends JFrame {
     }
 
     private void refreshMovies() {
-        movieModel.setRowCount(0); // Clear table before refreshing
+        movieModel.setRowCount(0);
         try (Connection conn = DatabaseConnection.getConnection();
-                Statement stmt = conn.createStatement();
-                ResultSet rs = stmt.executeQuery("SELECT movieId, title, releaseDate, duration, budget FROM Movie")) {
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT movieId, title, releaseDate, duration, budget FROM Movie")) {
             while (rs.next()) {
                 movieModel.addRow(new Object[] {
                         rs.getInt("movieId"),
@@ -159,10 +210,10 @@ public class MovieManagerGUI extends JFrame {
         if (searchTerm == null || searchTerm.trim().isEmpty())
             return;
 
-        movieModel.setRowCount(0); // Clear table before refreshing
+        movieModel.setRowCount(0);
         String sql = "SELECT movieId, title, releaseDate, duration, budget FROM Movie WHERE LOWER(title) LIKE ?";
         try (Connection conn = DatabaseConnection.getConnection();
-                PreparedStatement stmt = conn.prepareStatement(sql)) {
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, "%" + searchTerm.toLowerCase() + "%");
             ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
@@ -212,7 +263,7 @@ public class MovieManagerGUI extends JFrame {
 
     private int getMovieIdByTitle(String movieTitle) {
         try (Connection conn = DatabaseConnection.getConnection();
-                PreparedStatement stmt = conn.prepareStatement("SELECT movieId FROM Movie WHERE title = ?")) {
+             PreparedStatement stmt = conn.prepareStatement("SELECT movieId FROM Movie WHERE title = ?")) {
             stmt.setString(1, movieTitle);
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
@@ -228,7 +279,7 @@ public class MovieManagerGUI extends JFrame {
     private void displayReviews(int movieId) {
         String sql = "SELECT userId, rating, comment, reviewDate FROM Review WHERE movieId = ?";
         try (Connection conn = DatabaseConnection.getConnection();
-                PreparedStatement stmt = conn.prepareStatement(sql)) {
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, movieId);
             ResultSet rs = stmt.executeQuery();
             StringBuilder reviews = new StringBuilder("Reviews:\n");
@@ -254,4 +305,3 @@ public class MovieManagerGUI extends JFrame {
         SwingUtilities.invokeLater(() -> new MovieManagerGUI().setVisible(true));
     }
 }
-

@@ -44,4 +44,4 @@ public class InputValidatorGUI {
         JOptionPane.showMessageDialog(null, "Masked Password: " + maskPassword(password), "Confirmation",
                 JOptionPane.INFORMATION_MESSAGE);
     }
-}
+}   
