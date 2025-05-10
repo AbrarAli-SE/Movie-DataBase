@@ -5,8 +5,8 @@ import java.sql.*;
 import java.time.LocalDate;
 
 public class RegistrationGUI extends JFrame {
-    static class RoundedButton extends JButton {
-        public RoundedButton(String text) {
+    static class CustomButton extends JButton {
+        public CustomButton(String text) {
             super(text);
             setContentAreaFilled(false);
             setFocusPainted(false);
@@ -30,7 +30,7 @@ public class RegistrationGUI extends JFrame {
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g2.setColor(getBackground());
-            g2.fillRoundRect(0, 0, getWidth(), getHeight(), 20, 20);
+            g2.fillRect(0, 0, getWidth(), getHeight());
             super.paintComponent(g2);
             g2.dispose();
         }
@@ -64,8 +64,8 @@ public class RegistrationGUI extends JFrame {
         JTextField emailField = new JTextField();
         JLabel passwordLabel = new JLabel("Password:");
         JPasswordField passwordField = new JPasswordField();
-        RoundedButton registerButton = new RoundedButton("Register");
-        RoundedButton backButton = new RoundedButton("Back");
+        CustomButton registerButton = new CustomButton("Register");
+        CustomButton backButton = new CustomButton("Back");
 
         formPanel.add(usernameLabel);
         formPanel.add(usernameField);

@@ -4,12 +4,12 @@ import java.awt.event.*;
 import java.sql.*;
 
 public class LoginGUI extends JFrame {
-    static class RoundedButton extends JButton {
-        public RoundedButton(String text) {
+    static class CustomButton extends JButton {
+        public CustomButton(String text) {
             super(text);
             setContentAreaFilled(false);
             setFocusPainted(false);
-            setFont(new Font("Segoe UI", Font.PLAIN, 14));
+            setFont(new Font("Segoe UI", Font.PLAIN, 12)); // Changed from 14 to 12
             setForeground(Color.WHITE);
             setBackground(new Color(0, 123, 255));
             addMouseListener(new MouseAdapter() {
@@ -29,7 +29,7 @@ public class LoginGUI extends JFrame {
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g2.setColor(getBackground());
-            g2.fillRoundRect(0, 0, getWidth(), getHeight(), 20, 20);
+            g2.fillRect(0, 0, getWidth(), getHeight());
             super.paintComponent(g2);
             g2.dispose();
         }
@@ -61,8 +61,8 @@ public class LoginGUI extends JFrame {
         JTextField emailField = new JTextField();
         JLabel passwordLabel = new JLabel("Password:");
         JPasswordField passwordField = new JPasswordField();
-        RoundedButton loginButton = new RoundedButton("Login");
-        RoundedButton backButton = new RoundedButton("Back");
+        CustomButton loginButton = new CustomButton("Login");
+        CustomButton backButton = new CustomButton("Back");
 
         formPanel.add(emailLabel);
         formPanel.add(emailField);

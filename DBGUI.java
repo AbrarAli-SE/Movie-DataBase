@@ -3,8 +3,8 @@ import java.awt.*;
 import java.awt.event.*;
 
 public class DBGUI extends JFrame {
-    static class RoundedButton extends JButton {
-        public RoundedButton(String text) {
+    static class CustomButton extends JButton {
+        public CustomButton(String text) {
             super(text);
             setContentAreaFilled(false);
             setFocusPainted(false);
@@ -28,7 +28,7 @@ public class DBGUI extends JFrame {
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g2.setColor(getBackground());
-            g2.fillRoundRect(0, 0, getWidth(), getHeight(), 20, 20);
+            g2.fillRect(0, 0, getWidth(), getHeight());
             super.paintComponent(g2);
             g2.dispose();
         }
@@ -57,9 +57,9 @@ public class DBGUI extends JFrame {
         buttonPanel.setLayout(new GridLayout(5, 1, 10, 10));
         buttonPanel.setBackground(new Color(245, 247, 250));
 
-        String[] labels = { "Login", "Register (User)", "Search Movies (Guest)", "Back", "Exit" };
+        String[] labels = { "Login", "Register (User)", "Search Movies (Guest)",  "Exit" };
         for (String label : labels) {
-            RoundedButton button = new RoundedButton(label);
+            CustomButton button = new CustomButton(label);
             buttonPanel.add(button);
             button.addActionListener(this::handleMenuClick);
         }
@@ -82,11 +82,9 @@ public class DBGUI extends JFrame {
         switch (command) {
             case "Login" -> new LoginGUI().setVisible(true);
             case "Register (User)" -> new RegistrationGUI().setVisible(true);
-            // case "Search Movies (Guest)" -> new MovieManagerGUI().setVisible(true);
-             case "Guest" -> new MovieManagerGUI(true, 0).setVisible(true);
-            case "Back" -> {
-                JOptionPane.showMessageDialog(this, "Closing application.");
-                dispose();
+            case "Search Movies (Guest)" -> {
+                System.out.println("Opening MovieManagerGUI in guest mode");
+                new MovieManagerGUI(true, 0).setVisible(true);
             }
             case "Exit" -> System.exit(0);
         }

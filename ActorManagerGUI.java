@@ -5,8 +5,8 @@ import java.awt.event.*;
 import java.sql.*;
 
 public class ActorManagerGUI extends JFrame {
-    static class RoundedButton extends JButton {
-        public RoundedButton(String text) {
+    static class CustomButton extends JButton {
+        public CustomButton(String text) {
             super(text);
             setContentAreaFilled(false);
             setFocusPainted(false);
@@ -30,7 +30,7 @@ public class ActorManagerGUI extends JFrame {
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g2.setColor(getBackground());
-            g2.fillRoundRect(0, 0, getWidth(), getHeight(), 20, 20);
+            g2.fillRect(0, 0, getWidth(), getHeight());
             super.paintComponent(g2);
             g2.dispose();
         }
@@ -63,7 +63,7 @@ public class ActorManagerGUI extends JFrame {
         menuPanel.setBackground(new Color(245, 247, 250));
         String[] labels = { "Add Actor", "Edit Actor", "Delete Actor", "Back", "Exit" };
         for (String label : labels) {
-            RoundedButton button = new RoundedButton(label);
+            CustomButton button = new CustomButton(label);
             menuPanel.add(button);
             button.addActionListener(this::handleMenuClick);
         }

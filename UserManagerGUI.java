@@ -6,8 +6,8 @@ import java.sql.*;
 import java.time.LocalDate;
 
 public class UserManagerGUI extends JFrame {
-    static class RoundedButton extends JButton {
-        public RoundedButton(String text) {
+    static class CustomButton extends JButton {
+        public CustomButton(String text) {
             super(text);
             setContentAreaFilled(false);
             setFocusPainted(false);
@@ -31,7 +31,7 @@ public class UserManagerGUI extends JFrame {
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g2.setColor(getBackground());
-            g2.fillRoundRect(0, 0, getWidth(), getHeight(), 20, 20);
+            g2.fillRect(0, 0, getWidth(), getHeight());
             super.paintComponent(g2);
             g2.dispose();
         }
@@ -64,7 +64,7 @@ public class UserManagerGUI extends JFrame {
         menuPanel.setBackground(new Color(245, 247, 250));
         String[] labels = { "Register", "Back", "Exit" };
         for (String label : labels) {
-            RoundedButton button = new RoundedButton(label);
+            CustomButton button = new CustomButton(label);
             menuPanel.add(button);
             button.addActionListener(this::handleMenuClick);
         }
