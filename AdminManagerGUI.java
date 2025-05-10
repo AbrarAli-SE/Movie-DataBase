@@ -8,9 +8,11 @@ public class AdminManagerGUI extends JFrame {
             super(text);
             setContentAreaFilled(false);
             setFocusPainted(false);
-            setFont(new Font("Segoe UI", Font.PLAIN, 14));
+            setFont(new Font("Segoe UI", Font.PLAIN, 12)); // Reduced font size to 12
             setForeground(Color.WHITE);
             setBackground(new Color(0, 123, 255));
+            // Set a preferred size to make the button thinner while ensuring text fits
+            setPreferredSize(new Dimension(120, 30)); // Thinner width (120px), reasonable height (30px)
             addMouseListener(new MouseAdapter() {
                 @Override
                 public void mouseEntered(MouseEvent e) {
@@ -56,14 +58,24 @@ public class AdminManagerGUI extends JFrame {
         headerPanel.add(titleLabel);
         mainPanel.add(headerPanel, BorderLayout.NORTH);
 
-        JPanel menuPanel = new JPanel();
-        menuPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 10, 5));
+        // Use GridBagLayout for more control over button sizing
+        JPanel menuPanel = new JPanel(new GridBagLayout());
         menuPanel.setBackground(new Color(245, 247, 250));
-        String[] labels = { "Manage Actors", "Manage Directors", "Manage Genres", "Manage Studios", "Manage Users", "Manage Movies", "Back", "Exit" };
-        for (String label : labels) {
-            CustomButton button = new CustomButton(label);
-            menuPanel.add(button);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5); // 5px padding between buttons
+        gbc.fill = GridBagConstraints.NONE; // Buttons should not stretch
+        gbc.anchor = GridBagConstraints.CENTER;
+
+        String[] labels = { "Manage Actors", "Manage Directors", "Manage Genres", "Manage Studios", 
+                            "Manage Users", "Manage Movies", "Back", "Exit" };
+        for (int i = 0; i < labels.length; i++) {
+            CustomButton button = new CustomButton(labels[i]);
+            gbc.gridx = i % 2; // 2 columns
+            gbc.gridy = i / 2; // 4 rows
+            menuPanel.add(button, gbc);
             button.addActionListener(this::handleMenuClick);
+            System.out.println("Added button: " + labels[i] + " - Visible: " + button.isVisible() + 
+                              ", Size: " + button.getSize() + ", Preferred Size: " + button.getPreferredSize());
         }
         mainPanel.add(menuPanel, BorderLayout.CENTER);
 
@@ -73,6 +85,12 @@ public class AdminManagerGUI extends JFrame {
         mainPanel.add(footerLabel, BorderLayout.SOUTH);
 
         add(mainPanel, BorderLayout.CENTER);
+
+        // Force revalidation and repaint to ensure UI updates
+        menuPanel.revalidate();
+        menuPanel.repaint();
+        mainPanel.revalidate();
+        mainPanel.repaint();
     }
 
     private void handleMenuClick(ActionEvent e) {
@@ -83,7 +101,7 @@ public class AdminManagerGUI extends JFrame {
             case "Manage Genres" -> new GenreManagerGUI().setVisible(true);
             case "Manage Studios" -> new StudioManagerGUI().setVisible(true);
             case "Manage Users" -> new UserManagerGUI().setVisible(true);
-            case "Manage Movies" -> new MovieManagerGUI(false, userId).setVisible(true);
+            case "Manage Movies" -> new MovieManagerGUI(false, userId, true).setVisible(true);
             case "Back" -> dispose();
             case "Exit" -> System.exit(0);
         }

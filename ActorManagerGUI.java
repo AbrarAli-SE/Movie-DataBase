@@ -90,7 +90,6 @@ public class ActorManagerGUI extends JFrame {
             case "Edit Actor" -> editActor();
             case "Delete Actor" -> deleteActor();
             case "Back" -> dispose();
-            case "Exit" -> System.exit(0);
         }
     }
 

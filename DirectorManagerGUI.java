@@ -90,7 +90,7 @@ public class DirectorManagerGUI extends JFrame {
             case "Edit Director" -> editDirector();
             case "Delete Director" -> deleteDirector();
             case "Back" -> dispose();
-            case "Exit" -> System.exit(0);
+
         }
     }
 

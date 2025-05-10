@@ -90,7 +90,7 @@ public class StudioManagerGUI extends JFrame {
             case "Edit Studio" -> editStudio();
             case "Delete Studio" -> deleteStudio();
             case "Back" -> dispose();
-            case "Exit" -> System.exit(0);
+
         }
     }
 

@@ -90,7 +90,7 @@ public class GenreManagerGUI extends JFrame {
             case "Edit Genre" -> editGenre();
             case "Delete Genre" -> deleteGenre();
             case "Back" -> dispose();
-            case "Exit" -> System.exit(0);
+
         }
     }
 

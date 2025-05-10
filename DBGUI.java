@@ -84,7 +84,7 @@ public class DBGUI extends JFrame {
             case "Register (User)" -> new RegistrationGUI().setVisible(true);
             case "Search Movies (Guest)" -> {
                 System.out.println("Opening MovieManagerGUI in guest mode");
-                new MovieManagerGUI(true, 0).setVisible(true);
+                new MovieManagerGUI(true, 0, true).setVisible(true);
             }
             case "Exit" -> System.exit(0);
         }
